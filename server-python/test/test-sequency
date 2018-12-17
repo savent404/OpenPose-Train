@@ -1,0 +1,6 @@
+cmd1: python2 udpServer.py
+
+cmd2:
+	cat handShakeMsg | nc -u -w1 localhost 9000
+	cat startJsonTransmit | nc -u -w1 localhost 9000
+	cat JsonTransmit | nc -u -w1 localhost {specific Port}
