@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+        <file>src_img/back.png</file>
+        <file>BackButton.qml</file>
+        <file>src_img/train_1.jpg</file>
+        <file>src_img/train_2.jpg</file>
+        <file>StartButton.qml</file>
+        <file>PoseInfo.qml</file>
+    </qresource>
+</RCC>
