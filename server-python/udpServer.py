@@ -2,6 +2,16 @@ from pyserver.network import * # install by "pip install pyserver"
 import socket
 import random
 
+def createUdpSocket():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    return s
+
+def createRandomTcpServer():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(('', 0)) # return a avaliable random port
+    s.listen(1)
+    return s
+    
 def convertStr2Ord(string):
     """ convert a little-edition binary to int """
     data = 0
@@ -10,6 +20,27 @@ def convertStr2Ord(string):
         data |= ord(i) << cnt
         cnt += 8
     return data
+
+def recvfromTcpSocket(sock, blockSize=4096, accept_addr=None):
+    d = ''
+    while True:
+        conn, addr = sock.accept()
+        if accept_addr is None:
+            break
+        elif accept_addr == addr[0]:
+            break
+        else :
+            conn.close()
+            continue
+    print ("TCP server got a client: " + str(addr))
+    while True:
+        block = conn.recv(blockSize)
+        d += block
+        if len(block) < blockSize:
+            print ("TCP recv done, all size: " + str(len(d)))
+            break
+    conn.close()
+    return d
 
 def checkHandshake(addr, data):
     """ check if is handShake msg from client """
@@ -32,30 +63,7 @@ def checkFileTransmitStart(addr, data):
         print ("Request file Type: " + str(fType) + " Size: " + str(fSize))
         return fType, fSize
     return None
-
-class FileTransmitHandler(IUdpCallback):
-    """ a async class to handle a file transmit sequence """
-    def __init__(self, FileSize, FileType, callback=None):
-        self.size = FileSize
-        self.type = FileType
-        self.count = 0
-        self.frame = -1
-        self.data = ""
-        self.callback = callback
-    def on_received(self, server, addr, data):
-        str_frame = data[:2]
-        data = data[2:]
-        frame_num = ord(str_frame[0]) + ord(str_frame[1]) << 8
-        if frame_num - self.frame != 1:
-            print("Sequence error frame: " + str(frame_num) + " except: " + str(self.frame) + ", closing...")
-        else:
-            self.frame = frame_num
-            self.data += data
-            self.count += len(data)
-            if self.count >= self.size:
-                print("Recv file done")
-                if self.callback != None:
-                    self.callback(addr, self.type, self.data)
+    
 
 class myUdpHandler(IUdpCallback):
     def __init__(self):
@@ -69,36 +77,31 @@ class myUdpHandler(IUdpCallback):
         print ("From addr:" + str(addr))
 
         dictIndex = str(addr[0])
+
+        # check if is a 'handshake' msg
         if (checkHandshake(addr, data)):
+            # use Client's IP as dict ID
             self.client_list[dictIndex] = {'status':"WAIT" }
+        # check if is a 'starf transmission' msg
         elif dictIndex in self.client_list and self.client_list[dictIndex]['status'] == "WAIT":
             pair = checkFileTransmitStart(addr, data)
             if pair != None:
                 (fType, fSize) = pair
-                handle = FileTransmitHandler(fSize, fType, callback=self.recv_callback)
-                server = AsyncUDP(random.randint(9002, 9500), handle, addr[0])
-                print ("Generated a recv udp, port: " + str(server.port))
-                self.client_list[dictIndex]['server'] = server
-                self.client_list[dictIndex]['status'] = "RECV"
 
-                # Send a response to client notice the listen Port:server.port
-                server.send(addr[0], 9001, "STA\x05")
+                # Open a tcp port
+                tcpServer = createRandomTcpServer()
 
+                # remind client tcp's port
+                _, tcpPort = tcpServer.getsockname()
+                tmpUdp = createUdpSocket()
+                tmpUdp.sendto("STA\x05:" + str(tcpPort), addr)
+                tmpUdp.close()
+                # Recv file
+                data = recvfromTcpSocket(tcpServer)
+                # TODO: Handle file according to the fType
+                pass
     def on_sent(self, server, status, data):
         print ("Sent with status code (" + str(status) + ")")
-    def recv_callback(self, addr, fType, fData):
-        dictIndex = str(addr[0])
-        if dictIndex in self.client_list and self.client_list[dictIndex]['status'] == "RECV":
-            print ("Recv done")
-            self.client_list[dictIndex]['server'].close()
-            self.client_list[dictIndex]['status'] = "WAIT"
-
-            if fType == 1:
-                ''' json file '''
-                pass
-            elif fType == 2:
-                ''' img file '''
-                pass
 
 
 if __name__ == "__main__":
