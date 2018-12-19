@@ -8,7 +8,7 @@ def convertStr2Ord(string):
     cnt = 0
     for i in string:
         data |= ord(i) << cnt
-        cnt += 1
+        cnt += 8
     return data
 
 def checkHandshake(addr, data):
