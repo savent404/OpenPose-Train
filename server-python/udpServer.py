@@ -25,6 +25,7 @@ def recvfromTcpSocket(sock, blockSize=4096, accept_addr=None):
     d = ''
     while True:
         conn, addr = sock.accept()
+        print ("Got connection: " + str(addr))
         if accept_addr is None:
             break
         elif accept_addr == addr[0]:
@@ -32,7 +33,6 @@ def recvfromTcpSocket(sock, blockSize=4096, accept_addr=None):
         else :
             conn.close()
             continue
-    print ("TCP server got a client: " + str(addr))
     while True:
         block = conn.recv(blockSize)
         d += block
@@ -94,10 +94,12 @@ class myUdpHandler(IUdpCallback):
                 # remind client tcp's port
                 _, tcpPort = tcpServer.getsockname()
                 tmpUdp = createUdpSocket()
-                tmpUdp.sendto("STA\x05:" + str(tcpPort), addr)
+                tmpUdp.sendto("STA\x05:" + str(tcpPort), (addr[0], 9001))
                 tmpUdp.close()
+                print ("tell client tcp port:" + str(tcpPort))
                 # Recv file
                 data = recvfromTcpSocket(tcpServer)
+                print ("recv file ok")
                 # TODO: Handle file according to the fType
                 pass
     def on_sent(self, server, status, data):

@@ -59,6 +59,61 @@ void MyProb::setTimeout(bool b)
     bTimeout = b;
 }
 
+bool MyProb::transmitFile(void *file, size_t fileSize, int fileType)
+{
+    if (status != running) {
+        return false;
+    }
+    bool isOK = false;
+    // disable async handle first
+    enableAsyncRecv(false);
+    // Send a start transmit msg
+    QByteArray msg;
+    msg += "STA\x04:";
+    msg += int2QBG(uint32_t(fileType));
+    msg += ":";
+    msg += int2QBG(uint32_t(fileSize));
+    sock_ctl_send.writeDatagram(msg, serverIP, 9000);
+
+    // set a timer & waiting for server feedback
+    // timeout=100ms
+    QTimer timer(this);
+    timer.start(1000);
+    while (!sock_ctl_recv.hasPendingDatagrams()) {
+        if (timer.remainingTime() == 0) {
+            qDebug() << "Waiting for server a long time, exit";
+            emit TransmitError(-2, "Recv start flag ack timeout");
+            return false;
+        }
+    }
+    // read feed back
+    int tcpPort = 0;
+    while (sock_ctl_recv.hasPendingDatagrams()) {
+        QByteArray Buffer;
+        Buffer.resize(int(sock_ctl_recv.pendingDatagramSize()));
+        QHostAddress ip;
+        quint16 port;
+        sock_ctl_recv.readDatagram(Buffer.data(), Buffer.size(),
+                                   &ip, &port);
+        qDebug() << "Receive msg from: " << ip.toString() << ":" << port
+            << " Received msg: " << Buffer;
+        if (ip != serverIP)
+            continue;
+        if (strncmp(Buffer.data(), (const char*)"STA\x05:", 5)) {
+            tcpPort = QString(Buffer.data() + 5).toInt();
+            isOK = true;
+            qDebug() << "Get ack from server, tcp port: " << tcpPort;
+        }
+    }
+    // re-enable async
+    enableAsyncRecv(true);
+
+    if (!isOK)
+        return false;
+
+    return true;
+}
+
 void MyProb::processFrame(const QVideoFrame& frame)
 {
     if (!frame.isValid())
@@ -71,6 +126,10 @@ void MyProb::processFrame(const QVideoFrame& frame)
     QImage img;
     f.map(QAbstractVideoBuffer::ReadOnly);
 
+    if (transmitFile(f.bits(), uint32_t(f.mappedBytes()), 1) == false) {
+        qDebug() << "Transmit error";
+        emit TransmitError(-1, "Can't transmit img file");
+    }
 //    auto origin_format = f.pixelFormat();
 //    auto format = QVideoFrame::imageFormatFromPixelFormat(f.pixelFormat());
 //    if (format != QImage::Format_Invalid) {

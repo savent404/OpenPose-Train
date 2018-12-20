@@ -9,6 +9,7 @@
 #include <QStandardPaths>
 #include <QUdpSocket>
 #include <QTcpSocket>
+#include <QTimer>
 
 class MyProb : public QObject
 {
@@ -41,14 +42,15 @@ private:
     enum { waitingHandShake, running} status;
 
 private:
+    bool transmitFile(void *file, size_t fileSize, int fileType);
     void enableAsyncRecv(bool isEnable=true) {
         recvAsyncEnabled = isEnable;
     }
-    bool strncmp(char* arg1, char* arg2, int len) {
+    bool strncmp(const char* arg1, const char* arg2, int len) {
         while (len--) {
             if (*arg1++ != *arg2++)
                 return false;
-        }  return false;
+        }  return true;
     }
     QByteArray bytes2QBA(void *bytes, int len) {
         QByteArray a;
