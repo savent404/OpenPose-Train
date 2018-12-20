@@ -10,6 +10,7 @@
 #include <QUdpSocket>
 #include <QTcpSocket>
 #include <QTimer>
+#include <QThread>
 
 class MyProb : public QObject
 {
@@ -42,7 +43,7 @@ private:
     enum { waitingHandShake, running} status;
 
 private:
-    bool transmitFile(void *file, size_t fileSize, int fileType);
+    bool transmitFile(const void *file, size_t fileSize, int fileType);
     void enableAsyncRecv(bool isEnable=true) {
         recvAsyncEnabled = isEnable;
     }
@@ -74,6 +75,22 @@ public slots:
     void processFrame(const QVideoFrame &frame);
 private slots:
     void recvServerMsg();
+};
+
+class TcpTransmiter : public QThread
+{
+    Q_OBJECT
+public:
+    TcpTransmiter(const char* data, size_t len, QHostAddress ip, quint16 port);
+    int result;
+private:
+    QTcpSocket *sender;
+    const char* data;
+    size_t len;
+    QHostAddress ip;
+    quint16 port;
+protected:
+    void run();
 };
 
 #endif // MYPROB_H

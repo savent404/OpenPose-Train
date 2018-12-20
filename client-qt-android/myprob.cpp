@@ -59,7 +59,7 @@ void MyProb::setTimeout(bool b)
     bTimeout = b;
 }
 
-bool MyProb::transmitFile(void *file, size_t fileSize, int fileType)
+bool MyProb::transmitFile(const void *file, size_t fileSize, int fileType)
 {
     if (status != running) {
         return false;
@@ -110,6 +110,15 @@ bool MyProb::transmitFile(void *file, size_t fileSize, int fileType)
 
     if (!isOK)
         return false;
+
+    TcpTransmiter a((const char*)file, fileSize, serverIP, tcpPort);
+    a.start();
+    a.wait();
+
+    if (a.result != 0) {
+        emit TransmitError(a.result, "Transmit error");
+        return false;
+    }
 
     return true;
 }
@@ -176,4 +185,34 @@ void MyProb::recvServerMsg()
         serverIP = ip;
         status = running;
     }
+}
+
+TcpTransmiter::TcpTransmiter(const char *data, size_t len, QHostAddress ip, quint16 port) :
+    data(data),len(len), ip(ip), port(port), result(-1)
+{
+    sender = new QTcpSocket();
+}
+
+void TcpTransmiter::run()
+{
+    sender->connectToHost(ip, port, QTcpSocket::WriteOnly);
+    if (!sender->waitForConnected()) {
+        qDebug() << "Tcp connet time out";
+        result = 1;
+        return;
+    }
+    else {
+        auto r = sender->write(data, qint64(len));
+        if (r < 0) {
+            qDebug() << "Tcp write error";
+            result = 2;
+            return;
+        }
+    }
+    if (!sender->waitForBytesWritten()) {
+        qDebug() << "Tcp writen timeout";
+        result = 3;
+        return;
+    }
+    sender->disconnectFromHost();
 }
