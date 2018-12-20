@@ -1,9 +1,27 @@
 #include "myprob.h"
 
-MyProb::MyProb(QObject *parent) : QObject(parent), Prob(parent)
+MyProb::MyProb(QObject *parent) :
+    QObject(parent),
+    Prob(parent),
+    sock_ctl_send(this),
+    sock_ctl_recv(this)
 {
     pQmlCameraObj = nullptr;
     pCamera = nullptr;
+    enableAsyncRecv(true);
+
+    status = waitingHandShake;
+
+    sock_ctl_recv.bind(QHostAddress::AnyIPv4, 9001);
+
+    connect(&sock_ctl_recv, SIGNAL(readyRead()),
+            this, SLOT(recvServerMsg()));
+    
+    // send handshake msg to server
+    sock_ctl_send.writeDatagram("STA\x01", 4, QHostAddress::Broadcast, 9000);
+
+    status = waitingHandShake;
+
 }
 
 MyProb::~MyProb()
@@ -78,3 +96,25 @@ void MyProb::processFrame(const QVideoFrame& frame)
 
 }
 
+void MyProb::recvServerMsg()
+{
+    if (recvAsyncEnabled == false)
+        return;
+
+    QByteArray Buffer;
+    Buffer.resize(int(sock_ctl_recv.pendingDatagramSize()));
+
+    QHostAddress ip;
+    quint16 unusedPort;
+    sock_ctl_recv.readDatagram(Buffer.data(), Buffer.size(),
+                               &ip, &unusedPort);
+    qDebug() << "Receive msg from: " << ip.toString() << ":" << unusedPort
+        << " Received msg: " << Buffer;
+    
+    // check if it is handshake ack msg
+    if (Buffer == "STA\x02" && status == waitingHandShake) {
+        qDebug() << "HandShake ack found";
+        serverIP = ip;
+        status = running;
+    }
+}
