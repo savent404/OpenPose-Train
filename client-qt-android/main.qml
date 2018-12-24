@@ -144,6 +144,7 @@ Window {
                     id: prob
                     qmlCamera: camera
                     timeout: false
+                    type: main_window.type
                 }
                 VideoOutput {
                     source: camera
