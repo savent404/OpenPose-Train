@@ -14,6 +14,8 @@ Window {
     color: "grey"
     title: qsTr("OpenPose Train")
 
+    property int type: 0
+
     StackView {
         id: stackView
         anchors.fill: parent
@@ -30,17 +32,26 @@ Window {
                     Button {
                         text: qsTr("仰卧角度保持")
                         Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                        onClicked: stackView.push(page_pose1)
+                        onClicked: {
+                            main_window.type = 1
+                            stackView.push(page_pose1)
+                        }
                     }
                     Button {
                         text: qsTr("动态臀桥")
                         Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                        onClicked: stackView.push(page_pose2)
+                        onClicked: {
+                            main_window.type = 2
+                            stackView.push(page_pose2)
+                        }
                     }
                     Button {
                         text: qsTr("自定义")
                         Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                        onClicked: stackView.push(page_poseUnknow)
+                        onClicked: {
+                            main_window.type = 3
+                            stackView.push(page_poseUnknow)
+                        }
                     }
                 }
             }

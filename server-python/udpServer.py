@@ -1,6 +1,9 @@
 from pyserver.network import * # install by "pip install pyserver"
 import socket
+import numpy as np
 import random
+import cv2
+import json
 
 def createUdpSocket():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -99,7 +102,22 @@ class myUdpHandler(IUdpCallback):
                 print ("tell client tcp port:" + str(tcpPort))
                 # Recv file
                 data = recvfromTcpSocket(tcpServer)
-                print ("recv file ok")
+                if len(data) != fSize:
+                    print("recv file size is not the same")
+                    return
+                
+                if fType == 1:
+                    print('Reading image')
+                elif fType == 2:
+                    print("Reading json")
+                    config = json.loads(data)
+                    print(config)
+                    self.client_list[dictIndex]['width'] = config['width']
+                    self.client_list[dictIndex]['height'] = config['height']
+                    self.client_list[dictIndex]['type'] = config['type']
+                    self.client_list[dictIndex]['interval'] = config['interval']
+                else:
+                    print("Unsupported file type")
                 # TODO: Handle file according to the fType
                 pass
     def on_sent(self, server, status, data):

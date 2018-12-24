@@ -59,9 +59,28 @@ void MyProb::setTimeout(bool b)
     bTimeout = b;
 }
 
+int MyProb::getType()
+{
+    return type;
+}
+
+void MyProb::setType(int t)
+{
+    type = t;
+}
+
+void MyProb::generateJson(QJsonObject &obj, const int height, const int width)
+{
+
+    obj.insert("type", QJsonValue::fromVariant(type));
+    obj.insert("height", QJsonValue::fromVariant(height));
+    obj.insert("width", QJsonValue::fromVariant(width));
+    obj.insert("interval", QJsonValue::fromVariant(500));
+}
+
 bool MyProb::transmitFile(const void *file, size_t fileSize, int fileType)
 {
-    if (status != running) {
+    if (status == waitingHandShake) {
         return false;
     }
     bool isOK = false;
@@ -127,8 +146,30 @@ void MyProb::processFrame(const QVideoFrame& frame)
 {
     if (!frame.isValid())
         return;
+
+    if (status == waitingHandShake)
+        return;
+
+    if (status == waitingJson)
+    {
+        int h = frame.height();
+        int w = frame.width();
+        QJsonObject obj;
+        generateJson(obj, h, w);
+        QJsonDocument doc(obj);
+        QByteArray arry = doc.toJson();
+        if (transmitFile(arry.data(), size_t(arry.size()), 2)) {
+            status = running;
+        }
+        else {
+            qDebug() << "Config error, try next time";
+        }
+        return;
+    }
+
     if (!bTimeout)
         return;
+
     bTimeout = false;
 
     QVideoFrame f(frame);
@@ -183,7 +224,7 @@ void MyProb::recvServerMsg()
     if (Buffer == "STA\x02" && status == waitingHandShake) {
         qDebug() << "HandShake ack found";
         serverIP = ip;
-        status = running;
+        status = waitingJson;
     }
 }
 
@@ -215,4 +256,5 @@ void TcpTransmiter::run()
         return;
     }
     sender->disconnectFromHost();
+    result = 0;
 }

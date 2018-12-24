@@ -11,11 +11,14 @@
 #include <QTcpSocket>
 #include <QTimer>
 #include <QThread>
+#include <QJsonDocument>
+#include <QJsonObject>
 
 class MyProb : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(QObject* qmlCamera READ getQmlCamera WRITE setQmlCamera)
+    Q_PROPERTY(int type READ getType WRITE setType)
     Q_PROPERTY(bool timeout READ isTimeout WRITE setTimeout)
 public:
     explicit MyProb(QObject *parent = nullptr);
@@ -26,10 +29,14 @@ public:
 
     bool isTimeout() const;
     void setTimeout(bool);
+
+    int getType();
+    void setType(int t);
 private:
     QObject* pQmlCameraObj;
     QCamera* pCamera;
     QVideoProbe Prob;
+    int type;
     bool bTimeout;
 
     bool recvAsyncEnabled;
@@ -40,9 +47,10 @@ private:
 
     QHostAddress serverIP;
 
-    enum { waitingHandShake, running} status;
+    enum { waitingHandShake, waitingJson, running} status;
 
 private:
+    void generateJson(QJsonObject& json, const int height, const int width);
     bool transmitFile(const void *file, size_t fileSize, int fileType);
     void enableAsyncRecv(bool isEnable=true) {
         recvAsyncEnabled = isEnable;
