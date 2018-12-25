@@ -226,6 +226,15 @@ void MyProb::recvServerMsg()
         serverIP = ip;
         status = waitingJson;
     }
+    if (status == running && strncmp(Buffer.data(), "STA\x06:", 5)) {
+        qDebug() << "Receive a server's feed back";
+        QByteArray st(Buffer.data() + 5, Buffer.size() - 5);
+        QJsonDocument jsonDoc = QJsonDocument::fromJson(st);
+        QJsonObject jsonObj = jsonDoc.object();
+        bool isCorrect = jsonObj["isCorrect"].toBool();
+        QString msg = jsonObj["msg"].toString();
+        emit FeedBack(isCorrect, msg);
+    }
 }
 
 TcpTransmiter::TcpTransmiter(const char *data, size_t len, QHostAddress ip, quint16 port) :

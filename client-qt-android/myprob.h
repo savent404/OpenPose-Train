@@ -78,6 +78,7 @@ private:
 
 signals:
     void TransmitError(int errCode, const QString& errMsg);
+    void FeedBack(bool isCorrect, const QString& msg);
     void ResponseMsg(int code, const QString& errMsg);
 public slots:
     void processFrame(const QVideoFrame &frame);

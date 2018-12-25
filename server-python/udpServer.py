@@ -5,6 +5,14 @@ import random
 import cv2
 import json
 
+def createJson(correct=False, done=False, msg=""):
+    doc = {}
+    doc['correct'] = correct
+    doc['done'] = done
+    doc['msg'] = msg
+    jsonString = json.dump(doc)
+    return jsonString
+
 def createUdpSocket():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     return s
@@ -108,6 +116,14 @@ class myUdpHandler(IUdpCallback):
                 
                 if fType == 1:
                     print('Reading image')
+                    # TODO: read image from bytes
+                    # TODO: Handle image information
+                    # return a json for client
+                    jsonStr = createJson()
+                    # transmit to Client with UDP port: 9001
+                    tmpUdp = createUdpSocket()
+                    tmpUdp.sendto("STA\x06:"+jsonStr, (addr[0], 9001))
+                    tmpUdp.close()
                 elif fType == 2:
                     print("Reading json")
                     config = json.loads(data)
@@ -116,10 +132,12 @@ class myUdpHandler(IUdpCallback):
                     self.client_list[dictIndex]['height'] = config['height']
                     self.client_list[dictIndex]['type'] = config['type']
                     self.client_list[dictIndex]['interval'] = config['interval']
+                    if client_list[dictIndex]['type'] == 3:
+                        self.client_list[dictIndex]['angle'] = config['angle']
+                        self.client_list[dictIndex]['stay'] = config['stay']
                 else:
                     print("Unsupported file type")
-                # TODO: Handle file according to the fType
-                pass
+
     def on_sent(self, server, status, data):
         print ("Sent with status code (" + str(status) + ")")
 
