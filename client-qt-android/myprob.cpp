@@ -174,33 +174,45 @@ void MyProb::processFrame(const QVideoFrame& frame)
 
     QVideoFrame f(frame);
     QImage img;
+
+
     f.map(QAbstractVideoBuffer::ReadOnly);
 
-    if (transmitFile(f.bits(), uint32_t(f.mappedBytes()), 1) == false) {
-        qDebug() << "Transmit error";
-        emit TransmitError(-1, "Can't transmit img file");
+
+    auto origin_format = f.pixelFormat();
+    auto format = QVideoFrame::imageFormatFromPixelFormat(f.pixelFormat());
+    // wich format that QImage supported
+    if (format != QImage::Format_Invalid) {
+        img = QImage(f.bits(),
+                     f.width(),
+                     f.height(),
+                     format);
     }
-//    auto origin_format = f.pixelFormat();
-//    auto format = QVideoFrame::imageFormatFromPixelFormat(f.pixelFormat());
-//    if (format != QImage::Format_Invalid) {
-//        img = QImage(f.bits(),
-//                     f.width(),
-//                     f.height(),
-//                     format);
-//    }
-//    else if (origin_format == QVideoFrame::Format_NV21) {
+    // otherwise should be convert by myself
+    // this is for android
+    else if (origin_format == QVideoFrame::Format_NV21) {
 //        cv::Mat yuv(f.height() + f.height()/2, f.width(), CV_8UC1, f.bits());
 //        cv::Mat converted(f.height(), f.width(), CV_8UC3);
 //        cv::cvtColor(yuv, converted, CV_YUV2BGR_NV21);
 //        QString path = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation) + "/1.jpg";
 //        std::vector<uchar> buffer;
 //        cv::imencode(".png", converted, buffer);
-//    }
-//    else {
-//        int nBytes = f.mappedBytes();
-//        img = QImage::fromData(frame.bits(), nBytes);
-//    }
+    }
+    // last try
+    else {
+        img = QImage::fromData(frame.bits(), f.mappedBytes());
+    }
 
+    // convert image to jpg format into output
+    QByteArray output;
+    QBuffer buffer(&output);
+    img.save(&buffer, "jpg");
+
+    // transmit output
+    if (transmitFile(output.data(), uint32_t(output.size()), 1) == false) {
+        qDebug() << "Transmit error";
+        emit TransmitError(-1, "Can't transmit img file");
+    }
     f.unmap();
 
 }
