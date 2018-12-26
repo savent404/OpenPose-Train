@@ -7,5 +7,6 @@
         <file>src_img/train_2.jpg</file>
         <file>StartButton.qml</file>
         <file>PoseInfo.qml</file>
+        <file>ValueBox.qml</file>
     </qresource>
 </RCC>

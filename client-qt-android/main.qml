@@ -15,6 +15,12 @@ Window {
     title: qsTr("OpenPose Train")
 
     property int type: 0
+    property int a1: 0
+    property int a2: 0
+    property int a3: 0
+    property int a4: 0
+    property int a5: 0
+    property int times: 0
 
     StackView {
         id: stackView
@@ -113,7 +119,61 @@ Window {
                     onClicked: stackView.pop()
                 }
                 StartButton {
-                    onClicked: stackView.push(page_camera)
+                    onClicked: {
+                        main_window.a1 = a1.value
+                        main_window.a2 = a2.value
+                        main_window.a3 = a3.value
+                        main_window.a4 = a4.value
+                        main_window.a5 = a5.value
+                        main_window.times = times.value
+                        stackView.push(page_camera)
+                    }
+                }
+                ColumnLayout {
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: parent.width / 4
+                    Text {
+                        text: qsTr("Times(ms)")
+                    }
+
+                    ValueBox {
+                        id: times
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.right: parent.right
+                        value_top: 500000
+                        value_bottom: 0
+                    }
+                }
+
+                ColumnLayout {
+                    anchors.bottomMargin: 100
+                    anchors.fill: parent
+                    Text {
+                        text: qsTr("Angles")
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+
+                    ValueBox {
+                        id: a1
+                        value_top: 180
+                    }
+                    ValueBox {
+                        id: a2
+                        value_top: 180
+                    }
+                    ValueBox {
+                        id: a3
+                        value_top: 180
+                    }
+                    ValueBox {
+                        id: a4
+                        value_top: 180
+                    }
+                    ValueBox {
+                        id: a5
+                        value_top: 180
+                    }
                 }
             }
         }
@@ -144,7 +204,9 @@ Window {
                     anchors.bottom: parent.bottom
                     anchors.bottomMargin: 30
                     id: textLable
-                    text: qsTr("fsfds")
+                    text: qsTr("just for test")
+                    font.pointSize: 16
+                    font.bold: true
                     z: 1
                     anchors.horizontalCenter: parent.horizontalCenter
                 }
@@ -153,6 +215,12 @@ Window {
                     qmlCamera: camera
                     timeout: false
                     type: main_window.type
+                    a1: main_window.a1
+                    a2: main_window.a2
+                    a3: main_window.a3
+                    a4: main_window.a4
+                    a5: main_window.a5
+                    times: main_window.times
                     onFeedBack: {
                         textLable.text = msg
                     }

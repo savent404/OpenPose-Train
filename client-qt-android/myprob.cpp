@@ -21,7 +21,6 @@ MyProb::MyProb(QObject *parent) :
     sock_ctl_send.writeDatagram("STA\x01", 4, QHostAddress::Broadcast, 9000);
 
     status = waitingHandShake;
-
 }
 
 MyProb::~MyProb()
@@ -76,6 +75,13 @@ void MyProb::generateJson(QJsonObject &obj, const int height, const int width)
     obj.insert("height", QJsonValue::fromVariant(height));
     obj.insert("width", QJsonValue::fromVariant(width));
     obj.insert("interval", QJsonValue::fromVariant(500));
+    if (type == 3) {
+        obj.insert("stay", QJsonValue::fromVariant(times));
+        QJsonArray arr;
+        for (int i = 0; i < 5; i++)
+            arr.push_back(QJsonValue(angles[i]));
+        obj.insert("angle", QJsonValue(arr));
+    }
 }
 
 bool MyProb::transmitFile(const void *file, size_t fileSize, int fileType)

@@ -12,6 +12,7 @@
 #include <QTimer>
 #include <QThread>
 #include <QJsonDocument>
+#include <QJsonArray>
 #include <QJsonObject>
 
 class MyProb : public QObject
@@ -20,6 +21,12 @@ class MyProb : public QObject
     Q_PROPERTY(QObject* qmlCamera READ getQmlCamera WRITE setQmlCamera)
     Q_PROPERTY(int type READ getType WRITE setType)
     Q_PROPERTY(bool timeout READ isTimeout WRITE setTimeout)
+    Q_PROPERTY(int a1 WRITE setA1)
+    Q_PROPERTY(int a2 WRITE setA2)
+    Q_PROPERTY(int a3 WRITE setA3)
+    Q_PROPERTY(int a4 WRITE setA4)
+    Q_PROPERTY(int a5 WRITE setA5)
+    Q_PROPERTY(int times WRITE setTimes)
 public:
     explicit MyProb(QObject *parent = nullptr);
     ~MyProb();
@@ -33,6 +40,8 @@ public:
     int getType();
     void setType(int t);
 private:
+    int angles[5];
+    int times;
     QObject* pQmlCameraObj;
     QCamera* pCamera;
     QVideoProbe Prob;
@@ -50,6 +59,13 @@ private:
     enum { waitingHandShake, waitingJson, running} status;
 
 private:
+    void setA1(int v) { angles[0] = v; }
+    void setA2(int v) { angles[1] = v; }
+    void setA3(int v) { angles[2] = v; }
+    void setA4(int v) { angles[3] = v; }
+    void setA5(int v) { angles[4] = v; }
+    void setTimes(int v) { times = v; }
+
     void generateJson(QJsonObject& json, const int height, const int width);
     bool transmitFile(const void *file, size_t fileSize, int fileType);
     void enableAsyncRecv(bool isEnable=true) {
