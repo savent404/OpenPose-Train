@@ -76,10 +76,10 @@ private:
         return bytes2QBA(&num, 2);
     }
 
+public:
 signals:
-    void TransmitError(int errCode, const QString& errMsg);
-    void FeedBack(bool isCorrect, const QString& msg);
-    void ResponseMsg(int code, const QString& errMsg);
+    void transmitError(int errCode, const QString& errMsg);
+    void feedBack(bool isCorrect, const QString& msg);
 public slots:
     void processFrame(const QVideoFrame &frame);
 private slots:

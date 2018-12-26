@@ -140,11 +140,22 @@ Window {
 
                     flash.mode: Camera.FlashRedEyeReduction
                 }
+                Text {
+                    anchors.bottom: parent.bottom
+                    anchors.bottomMargin: 30
+                    id: textLable
+                    text: qsTr("fsfds")
+                    z: 1
+                    anchors.horizontalCenter: parent.horizontalCenter
+                }
                 MyProb {
                     id: prob
                     qmlCamera: camera
                     timeout: false
                     type: main_window.type
+                    onFeedBack: {
+                        textLable.text = msg
+                    }
                 }
                 VideoOutput {
                     source: camera

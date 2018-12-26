@@ -5,12 +5,12 @@ import random
 import cv2
 import json
 
-def createJson(correct=False, done=False, msg=""):
+def createJson(correct=False, done=False, msg="unknow"):
     doc = {}
     doc['correct'] = correct
     doc['done'] = done
     doc['msg'] = msg
-    jsonString = json.dump(doc)
+    jsonString = json.dumps(doc)
     return jsonString
 
 def createUdpSocket():
@@ -117,6 +117,8 @@ class myUdpHandler(IUdpCallback):
                 if fType == 1:
                     print('Reading image')
                     # TODO: read image from bytes
+                    img = cv2.imdecode(np.fromstring(data, dtype=np.uint8), -1)
+                    # to test rece a right imge: cv2.imwrite('/home/savent/1.jpg', img)
                     # TODO: Handle image information
                     # return a json for client
                     jsonStr = createJson()
@@ -132,7 +134,7 @@ class myUdpHandler(IUdpCallback):
                     self.client_list[dictIndex]['height'] = config['height']
                     self.client_list[dictIndex]['type'] = config['type']
                     self.client_list[dictIndex]['interval'] = config['interval']
-                    if client_list[dictIndex]['type'] == 3:
+                    if self.client_list[dictIndex]['type'] == 3:
                         self.client_list[dictIndex]['angle'] = config['angle']
                         self.client_list[dictIndex]['stay'] = config['stay']
                 else:

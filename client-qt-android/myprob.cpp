@@ -101,7 +101,7 @@ bool MyProb::transmitFile(const void *file, size_t fileSize, int fileType)
     while (!sock_ctl_recv.hasPendingDatagrams()) {
         if (timer.remainingTime() == 0) {
             qDebug() << "Waiting for server a long time, exit";
-            emit TransmitError(-2, "Recv start flag ack timeout");
+            emit transmitError(-2, "Recv start flag ack timeout");
             return false;
         }
     }
@@ -135,7 +135,7 @@ bool MyProb::transmitFile(const void *file, size_t fileSize, int fileType)
     a.wait();
 
     if (a.result != 0) {
-        emit TransmitError(a.result, "Transmit error");
+        emit transmitError(a.result, "Transmit error");
         return false;
     }
 
@@ -191,12 +191,18 @@ void MyProb::processFrame(const QVideoFrame& frame)
     // otherwise should be convert by myself
     // this is for android
     else if (origin_format == QVideoFrame::Format_NV21) {
-//        cv::Mat yuv(f.height() + f.height()/2, f.width(), CV_8UC1, f.bits());
-//        cv::Mat converted(f.height(), f.width(), CV_8UC3);
-//        cv::cvtColor(yuv, converted, CV_YUV2BGR_NV21);
-//        QString path = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation) + "/1.jpg";
-//        std::vector<uchar> buffer;
-//        cv::imencode(".png", converted, buffer);
+        img = QImage(f.bits(), f.width(), f.height(), QImage::Format_Grayscale8);
+    }
+    else if (origin_format == QVideoFrame::Format_YUYV) {
+        QByteArray a;
+        a.resize(f.width() * f.height());
+        const char* bits = (const char*)(f.bits());
+        for (int i = 0; i < f.width() * f.height(); i++)
+        {
+            a[i] = *bits;
+            bits += 2;
+        }
+        img = QImage((uchar*)a.data(), f.width(), f.height(), QImage::Format_Grayscale8);
     }
     // last try
     else {
@@ -206,12 +212,13 @@ void MyProb::processFrame(const QVideoFrame& frame)
     // convert image to jpg format into output
     QByteArray output;
     QBuffer buffer(&output);
-    img.save(&buffer, "jpg");
+    int quality = 50;
+    img.save(&buffer, "jpg", quality);
 
     // transmit output
     if (transmitFile(output.data(), uint32_t(output.size()), 1) == false) {
         qDebug() << "Transmit error";
-        emit TransmitError(-1, "Can't transmit img file");
+        emit transmitError(-1, "Can't transmit img file");
     }
     f.unmap();
 
@@ -245,7 +252,8 @@ void MyProb::recvServerMsg()
         QJsonObject jsonObj = jsonDoc.object();
         bool isCorrect = jsonObj["isCorrect"].toBool();
         QString msg = jsonObj["msg"].toString();
-        emit FeedBack(isCorrect, msg);
+        qDebug() << "Dump json file: isCorrect" << isCorrect << " msg: " << msg;
+        emit feedBack(isCorrect, msg);
     }
 }
 

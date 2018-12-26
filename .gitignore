@@ -26,3 +26,7 @@
 *.exe
 *.out
 *.app
+
+build-OP_Train-Android_for_x86_Clang_Qt_5_12_0_for_Android_x86-Debug/
+
+build-OP_Train-Desktop_Qt_5_12_0_GCC_64bit-Debug/
