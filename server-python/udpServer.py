@@ -2,10 +2,10 @@ from pyserver.network import * # install by "pip install pyserver"
 import socket
 import numpy as np
 import random
-import cv2
 import json
 
 def createJson(correct=False, done=False, msg="unknow"):
+    ''' return a Json Obj as string that used to ack client'''
     doc = {}
     doc['correct'] = correct
     doc['done'] = done
@@ -14,10 +14,12 @@ def createJson(correct=False, done=False, msg="unknow"):
     return jsonString
 
 def createUdpSocket():
+    ''' generate a UDP socket with random port, it's only used to transmit'''
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     return s
 
 def createRandomTcpServer():
+    ''' generate a TCP socket with random port, it used to rece image file'''
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind(('', 0)) # return a avaliable random port
     s.listen(1)
@@ -33,6 +35,9 @@ def convertStr2Ord(string):
     return data
 
 def recvfromTcpSocket(sock, blockSize=4096, accept_addr=None):
+    ''' a function to lisen TCP socket,
+    and rece bytes till buffer has no more. '''
+
     d = ''
     while True:
         conn, addr = sock.accept()
@@ -77,22 +82,29 @@ def checkFileTransmitStart(addr, data):
     
 
 class myUdpHandler(IUdpCallback):
+    ''' used to rece/send CTL msg with client.
+    Attribute : client_list used to storage client's infomation'''
+
     def __init__(self):
         self.client_list = {}
+
     def on_started(self, server):
         print ('UDP server is started')
-    def on_stoped(self, server):
-        print ('UDP server is stoped')
+
     def on_received(self, server, addr, data):
+        ''' handle client's message, identify which client with their IP addr'''
         print ("Received lenth: " + str(len(data)))
         print ("From addr:" + str(addr))
 
+        # convert IP addr to string, as the identfy ID.
         dictIndex = str(addr[0])
 
         # check if is a 'handshake' msg
         if (checkHandshake(addr, data)):
             # use Client's IP as dict ID
             self.client_list[dictIndex] = {'status':"WAIT" }
+            return
+
         # check if is a 'starf transmission' msg
         elif dictIndex in self.client_list and self.client_list[dictIndex]['status'] == "WAIT":
             pair = checkFileTransmitStart(addr, data)
@@ -114,14 +126,20 @@ class myUdpHandler(IUdpCallback):
                     print("recv file size is not the same")
                     return
                 
+                # handle rece data with different fType
+                # fType=1 is image(jpg)
+                # fType=2 is the configuration Json file
                 if fType == 1:
                     print('Reading image')
-                    # TODO: read image from bytes
+                    # read image from bytes
                     img = cv2.imdecode(np.fromstring(data, dtype=np.uint8), -1)
                     # to test rece a right imge: cv2.imwrite('/home/savent/1.jpg', img)
+
                     # TODO: Handle image information
+
                     # return a json for client
                     jsonStr = createJson()
+                    
                     # transmit to Client with UDP port: 9001
                     tmpUdp = createUdpSocket()
                     tmpUdp.sendto("STA\x06:"+jsonStr, (addr[0], 9001))
