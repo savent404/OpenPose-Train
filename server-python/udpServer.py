@@ -4,6 +4,8 @@ import numpy as np
 import random
 import json
 
+from openPoseThings import checkPose
+
 def createJson(correct=False, done=False, msg="unknow"):
     ''' return a Json Obj as string that used to ack client'''
     doc = {}
@@ -136,9 +138,23 @@ class myUdpHandler(IUdpCallback):
                     # to test rece a right imge: cv2.imwrite('/home/savent/1.jpg', img)
 
                     # TODO: Handle image information
+                    step = self.client_list[dictIndex]['step']
+                    poseType = self.client_list[dictIndex]['type']
+                    interval = self.client_list[dictIndex]['interval']
+                    if poseType == 3:
+                        isOK,msg,errCode,step = checkPose(img,
+                                                       type=poseType,
+                                                       step=step,
+                                                       interval=interval,
+                                                       param=self.client_list[dictIndex])
+                    else:
+                        isOK,msg,errCode,step = checkPose(img,
+                                                       type=poseType,
+                                                       step=step,
+                                                       interval=interval)
 
                     # return a json for client
-                    jsonStr = createJson()
+                    jsonStr = createJson(correct=isOK, done=False, msg=msg)
                     
                     # transmit to Client with UDP port: 9001
                     tmpUdp = createUdpSocket()
@@ -152,6 +168,7 @@ class myUdpHandler(IUdpCallback):
                     self.client_list[dictIndex]['height'] = config['height']
                     self.client_list[dictIndex]['type'] = config['type']
                     self.client_list[dictIndex]['interval'] = config['interval']
+                    self.client_list[dictIndex]['step'] = 0
                     if self.client_list[dictIndex]['type'] == 3:
                         self.client_list[dictIndex]['angle'] = config['angle']
                         self.client_list[dictIndex]['stay'] = config['stay']
