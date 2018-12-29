@@ -3,6 +3,7 @@ import socket
 import numpy as np
 import random
 import json
+import cv2
 
 from openPoseThings import checkPose
 
